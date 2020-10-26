@@ -1,6 +1,7 @@
 import socket
 import threading
-from keypresser import press_key, release_key
+import pydirectinput
+import pyautogui
 from typing import Any
 
 
@@ -8,25 +9,8 @@ HOST = socket.gethostbyname(socket.gethostname())
 PORT = 1024
 DISCONNECT_MESSAGE = '!DISCONNECT-REQUEST'
 PINS = {
-    '11': [0x11, False]
+    '11': 'w'
 }
-
-
-def press_key_in_background(pin: str) -> None:
-    PINS[pin][1] = True
-
-    def run() -> None:
-        while PINS[pin][1] == True:
-            press_key(PINS[pin][0])
-        return
-
-    press_thread = threading.Thread(target=run)
-    press_thread.start()
-    press_thread.join()
-
-def release_key(pin: str) -> None:
-    PINS[pin][1] = False
-
 
 def log(log_title: str, log_message: str) -> None:
     print('[' + log_title.upper() + ']' + ': ' + log_message)
@@ -48,11 +32,11 @@ def handle_client(connection: socket, address: tuple):
             state = str(state)
             pin = str(pin)
             if str(state) == '0':
-                press_key_in_background(pin)
-                log('KEYDOWN', f'keydown request for key {PINS[pin][0]} initiated...')
+                pydirectinput.keyDown(PINS[pin])
+                log('KEYDOWN', f'keydown request for key {PINS[pin]} initiated...')
             elif str(state) == '1':
-                release_key(pin)
-                log('KEYUP', f'keyup request for pin {PINS[pin][0]} initiated...')
+                pydirectinput.keyUp(PINS[pin])
+                log('KEYUP', f'keyup request for pin {PINS[pin]} initiated...')
 
     connection.close()
     log('DISCONNECT', f'client from {address} disconnected. Terminating thread...')
