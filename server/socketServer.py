@@ -15,7 +15,7 @@ PINS = {
 def log(log_title: str, log_message: str) -> None:
     print('[' + log_title.upper() + ']' + ': ' + log_message)
 
-def handle_client(connection: socket, address: tuple):
+def handle_client(connection: socket.socket, address: tuple):
     connected = True
     while connected:
         data = ''
