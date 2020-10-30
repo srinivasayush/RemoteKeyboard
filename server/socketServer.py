@@ -2,7 +2,6 @@ import socket
 import threading
 import pydirectinput
 import pyautogui
-from typing import Any
 
 
 HOST = socket.gethostbyname(socket.gethostname())
@@ -41,10 +40,10 @@ def handle_client(connection: socket, address: tuple):
             state = str(state)
             pin = str(pin)
             if str(state) == '0':
-                pydirectinput.keyDown(PINS[pin])
+                pydirectinput.keyDown(PINS.get(pin))
                 log('KEYDOWN', f'keydown request for key {PINS[pin]} initiated...')
             elif str(state) == '1':
-                pydirectinput.keyUp(PINS[pin])
+                pydirectinput.keyUp(PINS.get(pin))
                 log('KEYUP', f'keyup request for pin {PINS[pin]} initiated...')
 
     connection.close()
