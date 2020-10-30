@@ -1,12 +1,13 @@
 import socket
 import threading
 import pydirectinput
-import pyautogui
 
 
-HOST = socket.gethostbyname(socket.gethostname())
+HOST = ''
 PORT = 1024
 DISCONNECT_MESSAGE = '!DISCONNECT-REQUEST'
+KEYBOARD_CLIENT_TYPE = '!KEYBOARD-CLIENT'
+MOUSE_CLIENT_TYPE = '!MOUSE-CLIENT'
 PINS = {
     '42': 'w',
     '40': 'a',
@@ -16,25 +17,27 @@ PINS = {
     '45': 'shift',
     '31': 'e',
     '33': 'q',
-    '35': 'space'
-    
+    '35': 'space' 
 }
 
 def log(log_title: str, log_message: str) -> None:
-    print('[' + log_title.upper() + ']' + ': ' + log_message)
+    print(f'[{log_title.upper()}]: {str(log_message)}')
 
-def handle_client(connection: socket, address: tuple):
-    connected = True
-    while connected:
-        data = ''
-        buffer = ''
-        while buffer != '|':
-            buffer: str = str(connection.recv(1).decode('utf-8'))
-            data += buffer
-        data = data.replace('|', '')
-        log('DATA RECEIVED', f'{data} received from {address}')
+def receive_data_from_client (connection: socket.socket, address: tuple, final_character: str) -> str:
+    data = ''
+    buffer = ''
+    while buffer != final_character:
+        buffer: str = str(connection.recv(1).decode('utf-8'))
+        data += buffer
+    data = data.replace(final_character, '')
+    return data
+
+def handle_keyboard_client(connection: socket.socket, address: tuple) -> None:
+    while True:
+        data = receive_data_from_client(connection, address, final_character='|')
+        log('KEYBOARD DATA RECEIVED', f'{data} received from {address}')
         if data == DISCONNECT_MESSAGE:
-            connected = False
+            break
         else:
             pin, state = data.split(',')
             state = str(state)
@@ -47,11 +50,37 @@ def handle_client(connection: socket, address: tuple):
                 log('KEYUP', f'keyup request for pin {PINS[pin]} initiated...')
 
     connection.close()
-    log('DISCONNECT', f'client from {address} disconnected. Terminating thread...')
+    log('KEYBOARD DISCONNECT', f'client from {address} disconnected. Terminating thread...')
+
+def handle_mouse_client(connection: socket.socket, address: tuple) -> None:
+    while True:
+        data = receive_data_from_client(connection, address, final_character='|')
+        if data == DISCONNECT_MESSAGE:
+            break
+        else:
+            x, y = data.split(',')
+            x = int(x)
+            y = int(y)
+            log('mouse data received', (x, y))
+            pydirectinput.moveTo(x, y)
+
+
+def handle_client(connection: socket.socket, address: tuple) -> None:
+    '''Handles a socket client and checks whether the client is a keyboard or mouse client'''
+    client_type = receive_data_from_client(connection, address, final_character='|')
+    log('client type', client_type)
+    if client_type == KEYBOARD_CLIENT_TYPE:
+        handle_keyboard_client(connection, address)
+    elif client_type == MOUSE_CLIENT_TYPE:
+        handle_mouse_client(connection, address)
+
+
+    
+
 
 def start_server() -> None:
     server = socket.socket()
-    log('STARTING', 'server starting...')
+    log('STARTING', f'server starting on port {PORT}...')
     server.bind((HOST, PORT))
     server.listen()
 
@@ -60,5 +89,6 @@ def start_server() -> None:
         log('INITIALIZED', f'Client initialized - connection from {addr}')
         client_thread = threading.Thread(target=handle_client, args=(conn, addr))
         client_thread.start()
+        client_thread.join()
 
 start_server()
