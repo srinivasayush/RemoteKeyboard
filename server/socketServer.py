@@ -9,13 +9,22 @@ HOST = socket.gethostbyname(socket.gethostname())
 PORT = 1024
 DISCONNECT_MESSAGE = '!DISCONNECT-REQUEST'
 PINS = {
-    '11': 'w'
+    '42': 'w',
+    '40': 'a',
+    '44': 'd',
+    '43': 's',
+    '41': 'ctrl',
+    '45': 'shift',
+    '31': 'e',
+    '33': 'q',
+    '35': 'space'
+    
 }
 
 def log(log_title: str, log_message: str) -> None:
     print('[' + log_title.upper() + ']' + ': ' + log_message)
 
-def handle_client(connection: socket.socket, address: tuple):
+def handle_client(connection: socket, address: tuple):
     connected = True
     while connected:
         data = ''
